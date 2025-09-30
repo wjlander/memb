@@ -93,11 +93,12 @@ create_app_user() {
 install_nginx() {
     log "Installing and configuring Nginx..."
     sudo apt install nginx -y
-    sudo systemctl start nginx
     sudo systemctl enable nginx
     
-    # Stop nginx to clear any existing rate limit zones
-    sudo systemctl stop nginx
+    # Stop nginx and clear any existing configurations
+    sudo systemctl stop nginx || true
+    sudo pkill -f nginx || true
+    sleep 2
     
     # Remove ALL existing configurations to avoid conflicts
     sudo rm -f /etc/nginx/sites-enabled/$APP_NAME
@@ -105,9 +106,13 @@ install_nginx() {
     sudo rm -f /etc/nginx/sites-enabled/default
     sudo rm -f /etc/nginx/sites-enabled/*
     
-    # Clear any existing rate limit zones by restarting nginx
-    sudo systemctl start nginx
-    sudo systemctl stop nginx
+    # Check for any remaining nginx processes and kill them
+    sudo pkill -f nginx || true
+    sleep 2
+    
+    # Remove any nginx temp files that might cause issues
+    sudo rm -rf /var/lib/nginx/tmp/* || true
+    sudo rm -rf /var/cache/nginx/* || true
     
     # Create Nginx configuration
     sudo tee /etc/nginx/sites-available/$APP_NAME > /dev/null <<EOF
@@ -230,14 +235,21 @@ EOF
     sudo ln -sf /etc/nginx/sites-available/$APP_NAME /etc/nginx/sites-enabled/
     sudo rm -f /etc/nginx/sites-enabled/default
     
-    # Test configuration and reload
+    # Test configuration first
     if sudo nginx -t; then
-        sudo systemctl reload nginx
+        log "Nginx configuration test passed"
+        # Start nginx service
+        if sudo systemctl start nginx; then
+            log "Nginx started successfully"
+        else
+            error "Failed to start Nginx service. Check logs with: journalctl -xeu nginx.service"
+        fi
         log "Nginx configured successfully"
     else
-        error "Nginx configuration test failed"
+        log "Nginx configuration test failed. Checking for errors..."
+        sudo nginx -t
+        error "Nginx configuration test failed. Please check the configuration above."
     fi
-    
 }
 
 # Install SSL certificate

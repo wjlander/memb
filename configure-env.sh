@@ -97,6 +97,18 @@ echo ""
 # Restart application
 read -p "Do you want to restart the application now? (y/N): " restart_app
 if [[ $restart_app =~ ^[Yy]$ ]]; then
+    log "Rebuilding application with new environment variables..."
+    cd "$APP_DIR"
+    
+    # Install dev dependencies temporarily for build
+    sudo -u membership npm install
+    
+    # Rebuild the application with new env vars
+    sudo -u membership npm run build
+    
+    # Remove dev dependencies again
+    sudo -u membership npm prune --omit=dev
+    
     log "Restarting application..."
     sudo -u membership pm2 restart membership-system --update-env
     log "Application restarted successfully!"
@@ -106,6 +118,10 @@ if [[ $restart_app =~ ^[Yy]$ ]]; then
     echo "sudo -u membership pm2 logs membership-system"
 else
     warn "Remember to restart the application after making changes:"
+    echo "cd $APP_DIR"
+    echo "sudo -u membership npm install"
+    echo "sudo -u membership npm run build"
+    echo "sudo -u membership npm prune --omit=dev"
     echo "sudo -u membership pm2 restart membership-system --update-env"
 fi
 

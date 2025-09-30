@@ -3,7 +3,7 @@ module.exports = {
     name: 'membership-system',
     script: 'npm',
     args: 'start',
-    cwd: '/var/www/membership-system',
+    instances: 1,
     instances: 'max',
     exec_mode: 'cluster',
     env: {
@@ -14,6 +14,10 @@ module.exports = {
       NODE_ENV: 'production',
       PORT: 3000
     },
+    env_production: {
+      NODE_ENV: 'production',
+      PORT: 5173
+    },
     // Logging
     error_file: '/var/log/membership-system/err.log',
     out_file: '/var/log/membership-system/out.log',
@@ -23,10 +27,12 @@ module.exports = {
     // Memory and CPU limits
     max_memory_restart: '1G',
     node_args: '--max-old-space-size=1024',
+    node_args: '--max-old-space-size=1024',
     
     // Process management
     wait_ready: true,
     listen_timeout: 10000,
+    kill_timeout: 5000,
     kill_timeout: 5000,
     
     // Auto restart configuration
@@ -37,6 +43,9 @@ module.exports = {
     // Watch files in development (disable in production)
     watch: false,
     ignore_watch: [
+    // Environment variables
+    env_file: '.env',
+    
       'node_modules',
       '.next',
       'logs',
@@ -79,7 +88,7 @@ module.exports = {
     autorestart: true,
     watch: false,
     max_memory_restart: '1G',
-    env: {
+    pmx: true
       NODE_ENV: 'production',
       PORT: 3000,
       // Add any other environment variables needed

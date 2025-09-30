@@ -26,12 +26,16 @@ function App() {
 
   // Handle Super Admin Portal
   if (isSuperAdmin) {
+    console.log('Super admin portal detected, user:', user)
     if (!user) {
+      console.log('No user, showing super admin auth')
       return <SuperAdminAuth />
     }
     
     // Check if user is actually a super admin
+    console.log('User profile role:', user.profile?.role)
     if (user.profile?.role !== 'super_admin') {
+      console.log('User is not super admin, showing access denied')
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center max-w-md mx-auto p-6">
@@ -49,6 +53,7 @@ function App() {
       )
     }
     
+    console.log('Showing super admin dashboard')
     return (
       <SuperAdminLayout>
         <SuperAdminDashboard />
@@ -58,6 +63,7 @@ function App() {
 
   // Show error if organization not found
   if (tenantError || !organization) {
+    console.log('Organization error or not found:', tenantError, organization)
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">

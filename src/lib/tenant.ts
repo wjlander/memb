@@ -15,6 +15,7 @@ export interface Organization {
 
 export const tenant = {
   async getOrganizationBySubdomain(subdomain: string): Promise<Organization | null> {
+    console.log('Getting organization for subdomain:', subdomain)
     const { data, error } = await supabase
       .from('organizations')
       .select('*')
@@ -22,7 +23,11 @@ export const tenant = {
       .eq('is_active', true)
       .single()
 
-    if (error || !data) return null
+    if (error || !data) {
+      console.log('Organization not found:', error)
+      return null
+    }
+    console.log('Found organization:', data)
     return data
   },
 
@@ -30,20 +35,27 @@ export const tenant = {
     if (typeof window === 'undefined') return null
     
     const hostname = window.location.hostname
+    console.log('Current hostname:', hostname)
     const parts = hostname.split('.')
+    console.log('Hostname parts:', parts)
     
     // For development (localhost)
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       // Check for subdomain in URL params for testing
       const urlParams = new URLSearchParams(window.location.search)
-      return urlParams.get('org') || 'demo'
+      const orgParam = urlParams.get('org')
+      console.log('Development mode, org param:', orgParam)
+      return orgParam || 'demo'
     }
     
     // For production (subdomain.member.ringing.org.uk)
     if (parts.length >= 3 && parts[parts.length - 3] === 'member') {
-      return parts[0]
+      const subdomain = parts[0]
+      console.log('Production mode, detected subdomain:', subdomain)
+      return subdomain
     }
     
+    console.log('No subdomain detected')
     return null
   },
 
@@ -51,19 +63,25 @@ export const tenant = {
     if (typeof window === 'undefined') return false
     
     const hostname = window.location.hostname
+    console.log('Checking if super admin subdomain for hostname:', hostname)
     const parts = hostname.split('.')
     
     // For development (localhost)
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       const urlParams = new URLSearchParams(window.location.search)
-      return urlParams.get('org') === 'admin'
+      const isAdmin = urlParams.get('org') === 'admin'
+      console.log('Development mode, is admin:', isAdmin)
+      return isAdmin
     }
     
     // For production (admin.member.ringing.org.uk)
     if (parts.length >= 3 && parts[parts.length - 3] === 'member') {
-      return parts[0] === 'admin'
+      const isAdmin = parts[0] === 'admin'
+      console.log('Production mode, is admin:', isAdmin)
+      return isAdmin
     }
     
+    console.log('Not super admin subdomain')
     return false
   },
 

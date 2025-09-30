@@ -14,10 +14,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files from dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
-
-// Health check endpoint
+// Health check endpoint (before static files)
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
@@ -27,8 +24,11 @@ app.get('/favicon.ico', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'vite.svg'));
 });
 
-// Handle client-side routing - serve index.html for all non-API routes
-app.get('/*', (req, res) => {
+// Serve static files from dist directory
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// Handle client-side routing - serve index.html for all other routes
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 

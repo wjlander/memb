@@ -88,7 +88,8 @@ module.exports = {
     autorestart: true,
     watch: false,
     max_memory_restart: '1G',
-    pmx: true
+    pmx: true,
+    env: {
       NODE_ENV: 'production',
       PORT: 3000,
       // Add any other environment variables needed

@@ -96,11 +96,18 @@ install_nginx() {
     sudo systemctl start nginx
     sudo systemctl enable nginx
     
+    # Remove existing configuration if it exists
+    sudo rm -f /etc/nginx/sites-enabled/$APP_NAME
+    sudo rm -f /etc/nginx/sites-available/$APP_NAME
+    
+    # Test nginx configuration and reload to clear any existing rate limit zones
+    sudo nginx -t && sudo systemctl reload nginx || true
+    
     # Create Nginx configuration
     sudo tee /etc/nginx/sites-available/$APP_NAME > /dev/null <<EOF
-# Rate limiting
+# Rate limiting for $APP_NAME
 limit_req_zone \$binary_remote_addr zone=api:10m rate=10r/s;
-limit_req_zone \$binary_remote_addr zone=login:10m rate=5r/m;
+limit_req_zone \$binary_remote_addr zone=${APP_NAME}_login:10m rate=5r/m;
 
 # Upstream configuration
 upstream ${APP_NAME}_backend {
@@ -150,8 +157,8 @@ server {
     }
     
     # Auth endpoints rate limiting
-    location ~* /api/auth/(signin|signup|callback) {
-        limit_req zone=login burst=5 nodelay;
+    location ~* /(api/auth/(signin|signup|callback)|auth) {
+        limit_req zone=${APP_NAME}_login burst=5 nodelay;
         limit_req_status 429;
         try_files \$uri @proxy;
     }
@@ -217,11 +224,14 @@ EOF
     sudo ln -sf /etc/nginx/sites-available/$APP_NAME /etc/nginx/sites-enabled/
     sudo rm -f /etc/nginx/sites-enabled/default
     
-    # Test configuration
-    sudo nginx -t
-    sudo systemctl reload nginx
+    # Test configuration and reload
+    if sudo nginx -t; then
+        sudo systemctl reload nginx
+        log "Nginx configured successfully"
+    else
+        error "Nginx configuration test failed"
+    fi
     
-    log "Nginx configured successfully"
 }
 
 # Install SSL certificate

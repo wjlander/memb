@@ -257,12 +257,22 @@ install_ssl() {
     log "Installing SSL certificate..."
     sudo apt install certbot python3-certbot-nginx -y
     
-    # Get certificates for main domain and wildcard subdomain
-    log "Requesting SSL certificate for $DOMAIN and *.$DOMAIN"
-    warn "You may need to manually configure DNS for wildcard certificates"
+    # Get certificate for main domain first
+    log "Requesting SSL certificate for $DOMAIN"
     
-    # For now, just get the main domain certificate
-    sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@$DOMAIN || warn "SSL certificate installation failed. You can run 'sudo certbot --nginx -d $DOMAIN' manually later."
+    # Try to get certificate automatically
+    if sudo certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@$DOMAIN --redirect; then
+        log "SSL certificate installed successfully for $DOMAIN"
+    else
+        warn "Automatic SSL certificate installation failed."
+        log "You can install it manually later with: sudo certbot --nginx -d $DOMAIN"
+    fi
+    
+    # For wildcard certificates (subdomains), you'll need DNS validation
+    log "For subdomain support (admin.$DOMAIN, org1.$DOMAIN, etc.), you'll need to:"
+    log "1. Get a wildcard certificate using DNS validation:"
+    log "   sudo certbot certonly --manual --preferred-challenges dns -d $DOMAIN -d *.$DOMAIN"
+    log "2. Update the Nginx configuration to use the wildcard certificate"
     
     # Setup auto-renewal
     sudo systemctl enable certbot.timer
@@ -294,13 +304,13 @@ deploy_application() {
         sudo -u $APP_USER tee .env > /dev/null <<EOF
 # Application Configuration
 NODE_ENV=production
-VITE_APP_URL=https://$DOMAIN
-VITE_DOMAIN=$DOMAIN
+NEXT_PUBLIC_APP_URL=https://$DOMAIN
+NEXT_PUBLIC_DOMAIN=$DOMAIN
 PORT=$PORT
 
 # Supabase Configuration (REPLACE WITH YOUR VALUES)
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Email Configuration (REPLACE WITH YOUR VALUES)
@@ -313,7 +323,8 @@ NEXTAUTH_URL=https://$DOMAIN
 # Cron Secret
 CRON_SECRET=$(openssl rand -base64 32)
 EOF
-        warn "Please edit $APP_DIR/.env with your actual configuration values"
+        warn "IMPORTANT: Please edit $APP_DIR/.env with your actual Supabase configuration values!"
+        warn "The application will not work until you set the correct NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY"
     fi
     
     # Install dependencies

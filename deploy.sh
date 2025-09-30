@@ -320,6 +320,9 @@ EOF
     log "Installing dependencies..."
     sudo -u $APP_USER npm ci
     
+    # Install production server dependencies
+    sudo -u $APP_USER npm install express --save
+    
     # Build application
     log "Building application..."
     sudo -u $APP_USER npm run build
@@ -338,11 +341,10 @@ setup_pm2() {
 module.exports = {
   apps: [{
     name: '$APP_NAME',
-    script: 'npm',
-    args: 'run preview -- --port $PORT --host 0.0.0.0',
+    script: 'server.js',
     cwd: '$APP_DIR',
-    instances: 'max',
-    exec_mode: 'cluster',
+    instances: 1,
+    exec_mode: 'fork',
     env: {
       NODE_ENV: 'production',
       PORT: $PORT
@@ -355,42 +357,25 @@ module.exports = {
     
     // Memory and CPU limits
     max_memory_restart: '1G',
-    node_args: '--max-old-space-size=1024',
     
     // Process management
-    wait_ready: true,
-    listen_timeout: 10000,
-    kill_timeout: 5000,
+    listen_timeout: 30000,
+    kill_timeout: 10000,
     
     // Auto restart configuration
     autorestart: true,
-    max_restarts: 10,
+    max_restarts: 5,
     min_uptime: '10s',
     
     // Watch files (disabled in production)
     watch: false,
     
-    // Graceful shutdown
-    shutdown_with_message: true,
-    
-    // Health check
-    health_check_grace_period: 3000,
-    
     // Advanced options
     merge_logs: true,
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     
-    // Disable PM2 logs (use application logging instead)
-    disable_logs: false,
-    
     // Monitoring
-    pmx: true,
-    
-    // Advanced options
-    vizion: false,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '1G'
+    pmx: false
   }]
 };
 EOF

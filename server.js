@@ -1,10 +1,6 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require('express');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5173;
@@ -20,30 +16,13 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-// Serve favicon
-app.get('/favicon.ico', (req, res) => {
-  const faviconPath = path.join(__dirname, 'dist', 'vite.svg');
-  if (fs.existsSync(faviconPath)) {
-    res.sendFile(faviconPath);
-  } else {
-    res.status(404).send('Favicon not found');
-  }
-});
-
-// Serve vite.svg specifically
-app.get('/vite.svg', (req, res) => {
-  const vitePath = path.join(__dirname, 'dist', 'vite.svg');
-  if (fs.existsSync(vitePath)) {
-    res.sendFile(vitePath);
-  } else {
-    // Serve a simple SVG if the file doesn't exist
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.send(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>`);
-  }
-});
-
 // Serve static files from dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
+const distPath = path.join(__dirname, 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+} else {
+  console.error('Dist directory not found:', distPath);
+}
 
 // Handle client-side routing - serve index.html for all other routes  
 app.get('*', (req, res) => {

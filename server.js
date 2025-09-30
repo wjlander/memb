@@ -21,14 +21,19 @@ app.get('/health', (req, res) => {
 
 // Serve favicon
 app.get('/favicon.ico', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'vite.svg'));
+  const faviconPath = path.join(__dirname, 'dist', 'vite.svg');
+  if (require('fs').existsSync(faviconPath)) {
+    res.sendFile(faviconPath);
+  } else {
+    res.status(404).send('Favicon not found');
+  }
 });
 
 // Serve static files from dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Handle client-side routing - serve index.html for all other routes
-app.use((req, res) => {
+// Handle client-side routing - serve index.html for all other routes  
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 

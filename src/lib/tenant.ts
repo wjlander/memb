@@ -49,7 +49,7 @@ export const tenant = {
     }
     
     // For production (subdomain.member.ringing.org.uk)
-    if (parts.length >= 3 && parts[parts.length - 3] === 'member') {
+    if (parts.length >= 4 && parts[parts.length - 4] === 'member') {
       const subdomain = parts[0]
       console.log('Production mode, detected subdomain:', subdomain)
       return subdomain
@@ -75,7 +75,7 @@ export const tenant = {
     }
     
     // For production (admin.member.ringing.org.uk)
-    if (parts.length >= 3 && parts[parts.length - 3] === 'member') {
+    if (parts.length >= 4 && parts[parts.length - 4] === 'member') {
       const isAdmin = parts[0] === 'admin'
       console.log('Production mode, is admin:', isAdmin)
       return isAdmin

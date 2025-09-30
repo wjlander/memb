@@ -318,11 +318,15 @@ EOF
     
     # Install dependencies
     log "Installing dependencies..."
-    sudo -u $APP_USER npm ci --production
+    sudo -u $APP_USER npm ci
     
     # Build application
     log "Building application..."
     sudo -u $APP_USER npm run build
+    
+    # Clean up dev dependencies after build
+    log "Cleaning up dev dependencies..."
+    sudo -u $APP_USER npm prune --omit=dev
 }
 
 # Setup PM2 configuration

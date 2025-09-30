@@ -96,18 +96,24 @@ install_nginx() {
     sudo systemctl start nginx
     sudo systemctl enable nginx
     
-    # Remove existing configuration if it exists
+    # Stop nginx to clear any existing rate limit zones
+    sudo systemctl stop nginx
+    
+    # Remove ALL existing configurations to avoid conflicts
     sudo rm -f /etc/nginx/sites-enabled/$APP_NAME
     sudo rm -f /etc/nginx/sites-available/$APP_NAME
+    sudo rm -f /etc/nginx/sites-enabled/default
+    sudo rm -f /etc/nginx/sites-enabled/*
     
-    # Test nginx configuration and reload to clear any existing rate limit zones
-    sudo nginx -t && sudo systemctl reload nginx || true
+    # Clear any existing rate limit zones by restarting nginx
+    sudo systemctl start nginx
+    sudo systemctl stop nginx
     
     # Create Nginx configuration
     sudo tee /etc/nginx/sites-available/$APP_NAME > /dev/null <<EOF
-# Rate limiting for $APP_NAME
-limit_req_zone \$binary_remote_addr zone=api:10m rate=10r/s;
-limit_req_zone \$binary_remote_addr zone=${APP_NAME}_login:10m rate=5r/m;
+# Rate limiting zones for $APP_NAME (using unique names)
+limit_req_zone \$binary_remote_addr zone=${APP_NAME}_api:10m rate=10r/s;
+limit_req_zone \$binary_remote_addr zone=${APP_NAME}_auth:10m rate=5r/m;
 
 # Upstream configuration
 upstream ${APP_NAME}_backend {
@@ -151,14 +157,14 @@ server {
     
     # API rate limiting
     location /api/ {
-        limit_req zone=api burst=20 nodelay;
+        limit_req zone=${APP_NAME}_api burst=20 nodelay;
         limit_req_status 429;
         try_files \$uri @proxy;
     }
     
     # Auth endpoints rate limiting
     location ~* /(api/auth/(signin|signup|callback)|auth) {
-        limit_req zone=${APP_NAME}_login burst=5 nodelay;
+        limit_req zone=${APP_NAME}_auth burst=5 nodelay;
         limit_req_status 429;
         try_files \$uri @proxy;
     }

@@ -334,7 +334,7 @@ setup_pm2() {
     log "Setting up PM2 configuration..."
     
     # Create PM2 ecosystem file
-    sudo -u $APP_USER tee $APP_DIR/ecosystem.config.js > /dev/null <<EOF
+    sudo -u $APP_USER tee $APP_DIR/ecosystem.config.cjs > /dev/null <<EOF
 module.exports = {
   apps: [{
     name: '$APP_NAME',
@@ -402,7 +402,7 @@ EOF
     # Start application with PM2
     log "Starting application with PM2..."
     cd $APP_DIR
-    sudo -u $APP_USER pm2 start ecosystem.config.js
+    sudo -u $APP_USER pm2 start ecosystem.config.cjs
     sudo -u $APP_USER pm2 save
     
     # Setup PM2 startup script
